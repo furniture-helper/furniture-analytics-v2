@@ -39,5 +39,12 @@ func main() {
 		minimizerEventAnalytics.Orchestrator.Start(ctx)
 	}()
 
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		classificationEventAnalytics := components.NewClassificationEventAnalytics(pool)
+		classificationEventAnalytics.Orchestrator.Start(ctx)
+	}()
+
 	wg.Wait()
 }
