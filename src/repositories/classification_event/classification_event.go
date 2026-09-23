@@ -20,8 +20,8 @@ func NewClassificationEventRepository(pool *pgxpool.Pool) *ClassificationEventRe
 
 func (r *ClassificationEventRepository) InsetClassificationEvents(ctx context.Context, events []events.ClassificationEvent) (int, error) {
 	const query = `
-		INSERT INTO analytics.classification_event (event_ts, url, domain, classification, confidence)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO analytics.classification_event (event_ts, url, domain, classification, confidence, source)
+		VALUES ($1, $2, $3, $4, $5, $6)
 	`
 
 	if len(events) == 0 {
@@ -36,6 +36,7 @@ func (r *ClassificationEventRepository) InsetClassificationEvents(ctx context.Co
 			event.Domain,
 			event.Classification,
 			event.Confidence,
+			event.Source,
 		)
 	}
 

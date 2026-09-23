@@ -13,6 +13,7 @@ type ClassificationEvent struct {
 	Domain         string    `json:"domain"`
 	Classification string    `json:"classification"`
 	Confidence     float32   `json:"confidence"`
+	Source         string    `json:"source"`
 }
 
 func NewClassificationEventFromMessage(timestamp time.Time, message string, headers map[string]string) (*ClassificationEvent, error) {
@@ -42,12 +43,19 @@ func NewClassificationEventFromMessage(timestamp time.Time, message string, head
 		return nil, fmt.Errorf("error getting confidence from json data: %s", message)
 	}
 
+	source, ok := jsonData["source"].(string)
+	if !ok {
+		log.Printf("error getting source from json data: %s", message)
+		source = ""
+	}
+
 	return &ClassificationEvent{
 		Timestamp:      timestamp,
 		URL:            url,
 		Domain:         domain,
 		Classification: classification,
 		Confidence:     float32(confidenceValue),
+		Source:         source,
 	}, nil
 }
 
@@ -57,6 +65,7 @@ func (e *ClassificationEvent) String() string {
 		"url":            e.URL,
 		"classification": e.Classification,
 		"confidence":     e.Confidence,
+		"source":         e.Source,
 	}
 
 	b, err := json.MarshalIndent(printRecord, "", "  ")
