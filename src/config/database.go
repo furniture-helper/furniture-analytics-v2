@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -27,9 +28,13 @@ const (
 )
 
 type DatabaseConfig struct {
-	URL      string
-	MaxConns int32
-	MinConns int32
+	URL                      string
+	MaxConns                 int32
+	MinConns                 int32
+	UseRDSIAMAuth            bool
+	RDSIAMRegion             string
+	RDSIAMTokenRefreshBefore time.Duration
+	RDSIAMConnMaxLifetime    time.Duration
 }
 
 type DatabaseSecrets struct {
@@ -44,9 +49,13 @@ func GetDatabaseConfig(ctx context.Context) DatabaseConfig {
 	}
 
 	return DatabaseConfig{
-		URL:      buildDatabaseURL(ctx),
-		MaxConns: getInt32Env("DB_MAX_CONNS", defaultDBMaxConns),
-		MinConns: getInt32Env("DB_MIN_CONNS", defaultDBMinConns),
+		URL:                      buildDatabaseURL(ctx),
+		MaxConns:                 getInt32Env("DB_MAX_CONNS", defaultDBMaxConns),
+		MinConns:                 getInt32Env("DB_MIN_CONNS", defaultDBMinConns),
+		UseRDSIAMAuth:            getBoolEnv("DB_USE_RDS_IAM_AUTH", false),
+		RDSIAMRegion:             getStringEnv("RDS_IAM_REGION", getStringEnv("AWS_REGION", "")),
+		RDSIAMTokenRefreshBefore: getDurationEnv("RDS_IAM_TOKEN_REFRESH_BEFORE", time.Minute),
+		RDSIAMConnMaxLifetime:    getDurationEnv("RDS_IAM_CONN_MAX_LIFETIME", 14*time.Minute),
 	}
 }
 
@@ -130,7 +139,11 @@ func buildDatabaseURLFromEnv() string {
 		Path:   database,
 	}
 
-	connURL.User = url.UserPassword(username, password)
+	if password == "" {
+		connURL.User = url.User(username)
+	} else {
+		connURL.User = url.UserPassword(username, password)
+	}
 
 	query := url.Values{}
 	query.Set("sslmode", sslmode)
@@ -160,4 +173,32 @@ func getStringEnv(key, fallback string) string {
 	}
 
 	return value
+}
+
+func getBoolEnv(key string, fallback bool) bool {
+	value := strings.TrimSpace(os.Getenv(key))
+	if value == "" {
+		return fallback
+	}
+
+	parsed, err := strconv.ParseBool(value)
+	if err != nil {
+		return fallback
+	}
+
+	return parsed
+}
+
+func getDurationEnv(key string, fallback time.Duration) time.Duration {
+	value := strings.TrimSpace(os.Getenv(key))
+	if value == "" {
+		return fallback
+	}
+
+	parsed, err := time.ParseDuration(value)
+	if err != nil || parsed <= 0 {
+		return fallback
+	}
+
+	return parsed
 }

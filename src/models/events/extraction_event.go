@@ -3,6 +3,7 @@ package events
 import (
 	"encoding/json"
 	"fmt"
+	"furniture-analytics/helpers"
 	"log"
 	"time"
 )
