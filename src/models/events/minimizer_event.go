@@ -3,6 +3,7 @@ package events
 import (
 	"encoding/json"
 	"fmt"
+	"furniture-analytics/helpers"
 	"log"
 	"time"
 )
@@ -27,9 +28,9 @@ func NewMinimizerEventFromMessage(timestamp time.Time, message string, headers m
 		return nil, fmt.Errorf("error getting url from json data: %s", message)
 	}
 
-	domain, ok := jsonData["domain"].(string)
-	if !ok {
-		return nil, fmt.Errorf("error getting domain from json data: %s", message)
+	domain, err := helpers.GetDomainFromJSON(jsonData, message)
+	if err != nil {
+		return nil, err
 	}
 
 	originalSize, ok := jsonData["original_size_bytes"].(float64)

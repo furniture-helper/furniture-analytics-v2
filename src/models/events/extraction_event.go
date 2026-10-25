@@ -26,9 +26,9 @@ func NewExtractionEventFromMessage(timestamp time.Time, message string, headers 
 		return nil, fmt.Errorf("error getting url from json data: %s", message)
 	}
 
-	domain, ok := jsonData["domain"].(string)
-	if !ok {
-		return nil, fmt.Errorf("error getting domain from json data: %s", message)
+	domain, err := helpers.GetDomainFromJSON(jsonData, message)
+	if err != nil {
+		return nil, err
 	}
 
 	source, ok := jsonData["source"].(string)

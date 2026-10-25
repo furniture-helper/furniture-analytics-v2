@@ -3,6 +3,7 @@ package events
 import (
 	"encoding/json"
 	"fmt"
+	"furniture-analytics/helpers"
 	"log"
 	"time"
 )
@@ -28,9 +29,9 @@ func NewClassificationEventFromMessage(timestamp time.Time, message string, head
 		return nil, fmt.Errorf("error getting url from json data: %s", message)
 	}
 
-	domain, ok := jsonData["domain"].(string)
-	if !ok {
-		return nil, fmt.Errorf("error getting domain from json data: %s", message)
+	domain, err := helpers.GetDomainFromJSON(jsonData, message)
+	if err != nil {
+		return nil, err
 	}
 
 	classification, ok := jsonData["classification"].(string)
